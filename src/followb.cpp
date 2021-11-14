@@ -1,97 +1,67 @@
-#include <boost/bind.hpp>
-#include <ros/ros.h>
-#include <turtlesim/Pose.h>
-#include <geometry_msgs/Twist.h>
-#include <std_srvs/Empty.h>
 
-ros::Subscriber g_sub_pose;
-turtlesim::Pose g_turtlesim_pose;
+# include "followb.h"
 
-#define PI 3.141592
-float UPDATE_RATE = 1.016; //0.016 = 60 fps
-float ROT_SPEED = 3;
-double NEW_ANGLE = 0;
-bool bClockwise = false;
 
-void drawSpiral(ros::Publisher &g_pub_velocity) {
-	geometry_msgs::Twist vel_msg;
 
-	if ((g_turtlesim_pose.x < 10) && (g_turtlesim_pose.y < 10)) { // just to make beautiful spirals
+FollowB::FollowB(int argc,char **argv)
+{
+	if(argc != 3)
+	{
+		ROS_ERROR(
+		"Usage : stdr_obstacle avoidance <robot_frame_id> <laser_frame_id>");
+		exit(0);
+	}
+	laser_topic_ = std::string("/")  +  std::string(argv[1]) + std::string("/") + std::string(argv[2]);
+	speeds_topic_ = std::string("/") + std::string(argv[1]) + std::string("/cmd_vel");
+		
+	subscriber_ = n_.subscribe( laser_topic_.c_str(), 1, &FollowB::callback,this);
+		
+	cmd_vel_pub_ = n_.advertise<geometry_msgs::Twist>(speeds_topic_.c_str(), 1);
+}
 
-		NEW_ANGLE += 0.5;
 
-		vel_msg.linear.x = NEW_ANGLE;
-		vel_msg.linear.y = 0;
-		vel_msg.linear.z = 0;
+FollowB::~FollowB(void)
+{
 
-		vel_msg.angular.x = 0;
-		vel_msg.angular.y = 0;
+}
 
-		std::cout << vel_msg.linear.x << std::endl;
 
-		if (bClockwise)
-			vel_msg.angular.z = -std::abs(ROT_SPEED);
-		else
-			vel_msg.angular.z = std::abs(ROT_SPEED);
+void FollowB::callback(const sensor_msgs::LaserScan& msg)
+{
 
-		g_pub_velocity.publish(vel_msg);
-	} else {
-		vel_msg.linear.x = 0;
-		g_pub_velocity.publish(vel_msg);
+	scan_ = msg;
+
+	std::cout << "LaserScan angle(min.): " << scan_.angle_min  << " LaserScan angle(max.): " << scan_.angle_min << " angle (inc.) " << scan_.angle_increment << std::endl;
+
+	float linear = 0, rotational = 0;
+	for(unsigned int i = 0 ; i < scan_.ranges.size() ; i++)
+	{
+		float real_dist = scan_.ranges[i];
+		linear -= cos(scan_.angle_min + i * scan_.angle_increment) / (1.0 + real_dist * real_dist);
+		rotational -= sin(scan_.angle_min + i * scan_.angle_increment) 	/ (1.0 + real_dist * real_dist);
 	}
 
-}
+	geometry_msgs::Twist cmd;
 
-void timerCallback(const ros::TimerEvent&, ros::Publisher twist_pub) {
-	drawSpiral(twist_pub);
-}
+	linear /= scan_.ranges.size();
+	rotational /= scan_.ranges.size();
 
-/* Get current position of the turtle*/
+	//~ ROS_ERROR("%f %f",linear,rotational);
 
-void poseCallback(const turtlesim::Pose::ConstPtr &pose_message) {
-	g_turtlesim_pose.x = pose_message->x;
-	g_turtlesim_pose.y = pose_message->y;
-}
-
-/*
- * ROS uses SI units, specifically MKS.
- * That means for angular rate the default is radians/second.
- *
-*/
-double degrees2radians(double angle_in_degrees) {
-	return angle_in_degrees * PI / 180.0;
-}
-
-int main(int argc, char **argv) {
-
-	ros::init(argc, argv, "draw_spiral");
-
-	ros::NodeHandle nh;
-
-	g_sub_pose = nh.subscribe("turtle1/pose", 1, poseCallback);
-	ros::Publisher g_pub_velocity = nh.advertise<geometry_msgs::Twist>(
-			"turtle1/cmd_vel", 1);
-	ros::ServiceClient reset = nh.serviceClient<std_srvs::Empty>("reset");
-
-	double angle = 0;
-	std::cout << "Choose your angle in degrees, e.g. 10 (double) :" << std::endl;
-	std::cin >> angle;
-
-	bool bClockwise;
-	std::cout << "Clockwise (1 = True and 0 = False) ? \n";
-	while (!(std::cin >> bClockwise)) {
-		std::cin.clear();
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	if(linear > 0.3)
+	{
+		linear = 0.3;
+	}
+	else if(linear < -0.3)
+	{
+		linear = -0.3;
 	}
 
-	NEW_ANGLE = degrees2radians(angle);
+	cmd.linear.x = 0.3 + linear;
+	cmd.angular.z = rotational;
+	
+	std::cout << " Twist linear (x): "  << cmd.linear.x << " linear (y) : "   << cmd.linear.y  << " linear (z): "  << cmd.linear.z << std::endl;
+	std::cout << " Twist angular (x): " << cmd.angular.x << " angular (y) : " << cmd.angular.y << " angular (z): " << cmd.angular.z << std::endl;
 
-	std::cout << "Start drawing ..." << std::endl;
-	ros::Timer timer = nh.createTimer(ros::Duration(UPDATE_RATE),
-			boost::bind(timerCallback, _1, g_pub_velocity));
-
-	std_srvs::Empty empty;
-	reset.call(empty);
-
-	ros::spin();
+	cmd_vel_pub_.publish(cmd);
 }

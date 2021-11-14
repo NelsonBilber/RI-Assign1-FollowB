@@ -8,3 +8,6 @@
 # copy the auxiliary files to new clean folder
 
 # run ros commands to launch a server client environment
+
+roslaunch stdr_launchers b_map.launch
+rosrun  followb followb robot0 laser_0
