@@ -7,41 +7,76 @@
 
 #include <ros/package.h>
 #include "ros/ros.h"
-
-#include <stdr_msgs/RobotIndexedVectorMsg.h>
-
-#include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/Point.h>
+#include "nav_msgs/Odometry.h"
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Range.h>
 
+const float TARGET_DIST = 0.24f; /* 0.24f for value inf. it takes time to rotate*/
+const float TURNING_RATE = 15.0f;
+const float LINEAR_VEL = 0.3f;
+const float ANGULAR_VEL = 0.6f;
+
+const float EPSILON = 0.00001f;
+
+
+struct LaserHit{
+  float distance;
+  float angle;
+};
+
+struct Pose {
+  float positionx; 
+  float positiony;
+  float positionz;
+  float orientationx;
+  float orientationy;
+  float orientationz;
+};
 
 class FollowB
 {
   private:    
 
+    bool compareFloat(double a, double b);
+    
+    float degrees2radians(float angle_in_degrees);
+
+    LaserHit getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg);
+
+    void setupSubscribers(std::string robotId, std::string sensorId);
+
+    void setupPublisher(std::string robotId);
+
     sensor_msgs::LaserScan scan_;   
 
-    ros::Subscriber subscriber_;     
+    ros::Subscriber subscriberSensor_; 
 
-    ros::NodeHandle n_;      
+    ros::Subscriber subscriberOdometry_;     
 
-    std::string laser_topic_;      
+    ros::NodeHandle nodeHandler_;      
 
-    std::string speeds_topic_;      
+    ros::Publisher cmdVelPub_;
 
-    ros::Publisher cmd_vel_pub_;
+    bool touching_wall;
+
+    Pose lastPose_;
+
+    int inTheSamePosition = 0;
+
+    bool rotateItSelf = false;
     
   public:
     
     FollowB(int argc,char **argv);
-    
-    
-    ~FollowB(void);
-    
-    
-    void callback(const sensor_msgs::LaserScan& msg);
+        
+    ~FollowB(void);   
+
+    void laserCallback(const sensor_msgs::LaserScan& msg);
+
+    void sonarCallback(const sensor_msgs::Range::ConstPtr& msg);
+
+    void odometryCallback(const nav_msgs::Odometry::ConstPtr& msg);
     
 };
 
