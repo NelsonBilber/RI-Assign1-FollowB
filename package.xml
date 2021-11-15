@@ -2,7 +2,7 @@
 <package format="2">
   <name>followb</name>
   <version>1.0.0</version>
-  <description>Basic example of a turtle doing a spiral</description>
+  <description>Robot follow a B shape wall</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

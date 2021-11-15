@@ -17,17 +17,7 @@
       <theta>
         0
       </theta>
-    </initial_pose>
-    <kinematic>
-      <filename>
-        kinematic_models/omni_kinematic.xml
-      </filename>
-    </kinematic>
-    <laser>
-      <filename>
-        laser_sensors/hokuyo/hokuyo_URG_04LX.xml
-      </filename>
-    </laser>
+    </initial_pose>    
     <sonar>
       <filename>
         range_sensors/standard_sonar.xml
