@@ -12,7 +12,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Range.h>
 
-const float TARGET_DIST = 0.24f; /* 0.24f for value inf. it takes time to rotate*/
+const float TARGET_DIST = 0.3f; /* 0.24f for value inf. it takes time to rotate*/
 const float TURNING_RATE = 15.0f;
 const float LINEAR_VEL = 0.3f;
 const float ANGULAR_VEL = 0.6f;
@@ -23,6 +23,7 @@ const float EPSILON = 0.00001f;
 struct LaserHit{
   float distance;
   float angle;
+  int index;
 };
 
 struct Pose {
@@ -38,9 +39,20 @@ class FollowB
 {
   private:    
 
+    float convertPolarToCartesianX(const LaserHit &hit);
+    
+    float convertPolarToCartesianY(const LaserHit &hit);
+    
+
+    void virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg); 
+
+    void paralellWallFollowing(const sensor_msgs::LaserScan& msg);
+
     bool compareFloat(double a, double b);
     
     float degrees2radians(float angle_in_degrees);
+
+    float radians2degrees(float angle_in_radians);
 
     LaserHit getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg);
 

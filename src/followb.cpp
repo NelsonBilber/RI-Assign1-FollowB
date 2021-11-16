@@ -122,7 +122,7 @@ LaserHit FollowB::getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg)
 		{
 			laserHit.distance = msg.ranges[i];
 			laserHit.angle = msg.angle_min + (msg.angle_increment * float(i));
-
+			laserHit.index = i;
 			//std::cout << "=> New min. distance: " << laserHit.distance << " angle: " << laserHit.angle << std::endl;
 		}
     }
@@ -134,51 +134,135 @@ LaserHit FollowB::getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg)
 
 float FollowB::degrees2radians(float angle_in_degrees) 
 {
-	return angle_in_degrees * M_PI / 180.0;
+	return angle_in_degrees * (M_PI / 180.0);
 }
 
-// @Read
-// http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/LaserScan.html
-void FollowB::laserCallback(const sensor_msgs::LaserScan& msg)
+
+float FollowB::radians2degrees(float angle_in_radians){
+	return angle_in_radians * (180/M_PI);
+}
+
+void FollowB::paralellWallFollowing(const sensor_msgs::LaserScan& msg)
 {
 	LaserHit laserHit = getMinDistanceLaserHit(msg);
 	
 	//std::cout << "=> Compare with: " << laserHit.distance << " TargetDistance: " << TARGET_DIST << std::endl;
+	/*
 	std::cout << "=> Compare with: " << laserHit.distance 
 			  << " => max range: "	 << msg.range_max
 			  << " TargetDistance: " << TARGET_DIST 
+			  << " index: "  << laserHit.index  << " from max: " << msg.ranges.size()
 			  << std::endl;
-	
+	*/
+
 	if(laserHit.distance <= msg.range_max) 
 	{
 		touching_wall = true;
 
 		float alpha =  degrees2radians(90) - fabs(laserHit.angle);
 		//float alpha =  float(M_PI/2.0) - fabs(laserHit.angle);
-
+/*
 		std::cout << "target dst: " << (laserHit.distance - TARGET_DIST) << std::endl;
 		std::cout << "alpha: " << alpha << std::endl;
 		std::cout << "sin(alpha): " << sin(alpha) << std::endl;
-
+*/
 		geometry_msgs::Twist cmd;
 		cmd.linear.x = LINEAR_VEL;
 		cmd.angular.z = - TURNING_RATE * (sin(alpha) - (laserHit.distance - TARGET_DIST)) * LINEAR_VEL;
-
+/*
 		std::cout << "linear vel: " << cmd.linear.x << "\n";
 		std::cout << "angular vel: " << cmd.angular.z << "\n";
 		std::cout << "laser dist: " << laserHit.distance << "\n";
 		std::cout << "alpha: " << alpha << "\n";
 		std::cout << std::endl;
 		std::cout << "Touching the wall" << std::endl;
-
+*/
 		if(!rotateItSelf)
 			cmdVelPub_.publish(cmd);
+
+		std::cout <<"algo 0: " << alpha << " z = " << cmd.angular.z <<std::endl;
     }	
     else 
 	{
     	touching_wall = false;
 		std::cout << "=> not touching the wall" << std::endl;
     }
+}
+
+float FollowB::convertPolarToCartesianX(const LaserHit &hit)
+{
+	return hit.distance * cos ((hit.angle));
+}
+    
+float FollowB::convertPolarToCartesianY(const LaserHit &hit)
+{
+	return hit.distance * sin ((hit.angle));
+}
+
+void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg)
+{
+	LaserHit laserHitRay1 = {FLT_MAX, 0.0f};
+	LaserHit laserHitRay2 = {FLT_MAX, 0.0f};
+
+	int minIdx = 0;
+	
+	
+    for(int i = 0; i < msg.ranges.size(); i++) 
+	{
+		if(msg.ranges[i] < laserHitRay1.distance) 
+		{
+			minIdx = i;
+			laserHitRay1.distance = msg.ranges[i];
+		}
+    }
+
+	std::cout <<"Index: " << minIdx << " total: "  << msg.ranges.size() <<  std::endl;
+
+	// get the structure of min laser
+
+	laserHitRay1.distance = msg.ranges[minIdx];
+	laserHitRay1.angle = msg.angle_min + (msg.angle_increment * float(minIdx));
+	laserHitRay1.index = minIdx;
+
+	int INC = 3;
+	laserHitRay2.distance = msg.ranges[minIdx+INC];
+	laserHitRay2.angle = msg.angle_min + (msg.angle_increment * float(minIdx+INC));
+	laserHitRay2.index = minIdx+INC;
+
+	
+	float x0 = convertPolarToCartesianX(laserHitRay1);
+	float y0 = convertPolarToCartesianY(laserHitRay1);
+
+	float x1 = convertPolarToCartesianX(laserHitRay2);
+	float y1 = convertPolarToCartesianY(laserHitRay2);
+
+	std::cout << "x0 = "<< x0 << " y0 = " << y0 << std::endl;
+	std::cout << "x1 = "<< x1 << " y1 = " << y1 << std::endl;
+
+	//@Todo
+	//convert degree to rad ?
+
+	float DWALL = 1.0;
+	float WALL_LEAD = 2.5;
+
+	float alpha = atan2 ((y1-DWALL), (x1 + WALL_LEAD - y0)) ;
+	//std::cout <<"algo 2: " << alpha << " (x1 -x0) "<< (x1-x0) <<std::endl;
+
+	geometry_msgs::Twist cmd;
+	cmd.linear.x = LINEAR_VEL;
+	cmd.angular.z = alpha;
+
+	cmdVelPub_.publish(cmd);
+
+}
+
+// @Read
+// http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/LaserScan.html
+void FollowB::laserCallback(const sensor_msgs::LaserScan& msg)
+{
+	// paralellWallFollowing(msg);
+
+	virtualTriangleWallFollowing(msg);
 }
 
 // @Read
