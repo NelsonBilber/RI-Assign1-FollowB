@@ -19,6 +19,8 @@ const float ANGULAR_VEL = 0.6f;
 
 const float EPSILON = 0.00001f;
 
+const float DWALL = 1.1f;
+const float WALL_LEAD = 2.6f;
 
 struct LaserHit{
   float distance;
@@ -26,35 +28,28 @@ struct LaserHit{
   int index;
 };
 
-struct Pose {
-  float positionx; 
-  float positiony;
-  float positionz;
-  float orientationx;
-  float orientationy;
-  float orientationz;
-};
 
 class FollowB
 {
   private:    
 
-    float convertPolarToCartesianX(const LaserHit &hit);
-    
-    float convertPolarToCartesianY(const LaserHit &hit);
-    
-
-    void virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg); 
+     void virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg); 
 
     void paralellWallFollowing(const sensor_msgs::LaserScan& msg);
 
     bool compareFloat(double a, double b);
+
+    float convertPolarToCartesianX(const LaserHit &hit);
+    
+    float convertPolarToCartesianY(const LaserHit &hit);
     
     float degrees2radians(float angle_in_degrees);
 
     float radians2degrees(float angle_in_radians);
 
     LaserHit getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg);
+
+    void setupReactiveAlgorithm(std::string algo);
 
     void setupSubscribers(std::string robotId, std::string sensorId);
 
@@ -70,13 +65,8 @@ class FollowB
 
     ros::Publisher cmdVelPub_;
 
-    bool touching_wall;
+    std::string algorithm_;
 
-    Pose lastPose_;
-
-    int inTheSamePosition = 0;
-
-    bool rotateItSelf = false;
     
   public:
     

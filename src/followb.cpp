@@ -2,14 +2,14 @@
 
 FollowB::FollowB(int argc,char **argv)
 {
-	if(argc != 3)
+	if(argc != 4)
 	{
 		ROS_ERROR(
-		"Usage : followb <robot_frame_id> <sensor_frame_id>");
+		"Usage : followb <robot_frame_id> <sensor_frame_id> <algorithm>");
 		exit(0);
 	}
 
-	lastPose_ = {-1.0f,-1.0f,-1.0f,-1.0f,-1.0f,-1.0f};
+	setupReactiveAlgorithm(argv[3]);
 	setupSubscribers(std::string(argv[1]), std::string(argv[2]));
 	setupPublisher(std::string(argv[1]));
 }
@@ -17,6 +17,21 @@ FollowB::FollowB(int argc,char **argv)
 
 FollowB::~FollowB(void)
 {}
+
+void FollowB::setupReactiveAlgorithm(std::string algo)
+{	
+	if(algo.compare(std::string("vwall")) != 0 &&  algo.compare(std::string("pwall")) != 0)
+	{
+		std::cout << algo << std::endl;
+		std::cout << "Algorithm not supported. Please, choose pwall or vwall as parameter." << std::endl;
+		exit(0);
+	}
+	else
+	{
+		algorithm_ = algo;
+		std::cout <<"Start navigation with algorithm:"<< algorithm_ <<std::endl;
+	}
+}
 
 void FollowB::setupSubscribers(std::string robotId, std::string sensorId)
 {	
@@ -39,67 +54,7 @@ void FollowB::setupSubscribers(std::string robotId, std::string sensorId)
 		std::cout << "Sensor not recognized: " << sensorId << std::endl;		
 	}
 
-	//odometry
-	std::string odomTopic = std::string("/") + robotId + std::string("/odom");    
-    subscriberOdometry_ = nodeHandler_.subscribe(odomTopic, 1, &FollowB::odometryCallback, this);
 }
-
-bool FollowB::compareFloat(double a, double b)
-{
-    return fabs(a - b) < EPSILON;
-}
-
-void FollowB::odometryCallback(const nav_msgs::Odometry::ConstPtr& msg)
-{
-/*
-	ROS_INFO("Seq: [%d]", msg->header.seq);
-	ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
-	ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
-	ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
-
-	std::cout << "robot is not stuck " << lastPose_.positionx << " " << msg->pose.pose.position.x  << std::endl;
-	std::cout << "robot is not stuck " << lastPose_.positiony << " " << msg->pose.pose.position.y  << std::endl;
-	std::cout << "robot is not stuck " << lastPose_.positionz << " " << msg->pose.pose.position.z  << std::endl;
-*/
-	if( compareFloat(lastPose_.positionx, msg->pose.pose.position.x) &&
-		compareFloat(lastPose_.positiony, msg->pose.pose.position.y) &&
-		compareFloat(lastPose_.positionz, msg->pose.pose.position.z) &&
-		compareFloat(lastPose_.orientationx, msg->pose.pose.orientation.x) &&
-		compareFloat(lastPose_.orientationy, msg->pose.pose.orientation.y) &&
-		compareFloat(lastPose_.orientationz, msg->pose.pose.orientation.z))
-	{
-			/*
-			rotateItSelf = true;
-
-			inTheSamePosition++;
-			if(inTheSamePosition == 100)
-			{
-				std::cout << "robot is stuck (update position)" << inTheSamePosition  << std::endl;
-				
-				geometry_msgs::Twist cmd;
-				cmd.linear.x = LINEAR_VEL;
-				cmd.angular.z =  0;
-			
-				//cmdVelPub_.publish(cmd);
-				rotateItSelf = false;
-				inTheSamePosition = 0;
-			}
-			*/
-
-			//std::cout << "robot is stuck " << inTheSamePosition  << std::endl;
-			//std::cout << "angular (z): " << msg->pose.pose.orientation.z << std::endl;
-	}
-	else{
-		inTheSamePosition = 0;
-		lastPose_.positionx = msg->pose.pose.position.x ;
-		lastPose_.positiony = msg->pose.pose.position.y ;
-		lastPose_.positionz = msg->pose.pose.position.z ;
-		lastPose_.orientationx =  msg->pose.pose.orientation.x ;
-		lastPose_.orientationy =  msg->pose.pose.orientation.y ;
-		lastPose_.orientationz =  msg->pose.pose.orientation.z;
-	}
-}
-
 
 void FollowB::setupPublisher(std::string robotId)
 {	
@@ -111,25 +66,21 @@ LaserHit FollowB::getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg)
 {
 	LaserHit laserHit = {FLT_MAX, 0.0f};
 
-	//std::cout << "Begin distance: " << laserHit.distance << " angle: " << laserHit.angle << std::endl;
-	//std::cout << "Max ranges: " << msg.ranges.size() << std::endl;
-
     for(int i = 0; i < msg.ranges.size(); i++) 
 	{
-		//std::cout << "Range (i) : " << i << " range " << msg.ranges[i] << " angle inc. : " << msg.angle_increment << std::endl;
-
 		if(msg.ranges[i] < laserHit.distance) 
 		{
 			laserHit.distance = msg.ranges[i];
 			laserHit.angle = msg.angle_min + (msg.angle_increment * float(i));
 			laserHit.index = i;
-			//std::cout << "=> New min. distance: " << laserHit.distance << " angle: " << laserHit.angle << std::endl;
 		}
     }
-
-	//std::cout << std::endl;
-
 	return laserHit;
+}
+
+bool FollowB::compareFloat(double a, double b)
+{
+    return fabs(a - b) < EPSILON;
 }
 
 float FollowB::degrees2radians(float angle_in_degrees) 
@@ -137,56 +88,8 @@ float FollowB::degrees2radians(float angle_in_degrees)
 	return angle_in_degrees * (M_PI / 180.0);
 }
 
-
 float FollowB::radians2degrees(float angle_in_radians){
 	return angle_in_radians * (180/M_PI);
-}
-
-void FollowB::paralellWallFollowing(const sensor_msgs::LaserScan& msg)
-{
-	LaserHit laserHit = getMinDistanceLaserHit(msg);
-	
-	//std::cout << "=> Compare with: " << laserHit.distance << " TargetDistance: " << TARGET_DIST << std::endl;
-	/*
-	std::cout << "=> Compare with: " << laserHit.distance 
-			  << " => max range: "	 << msg.range_max
-			  << " TargetDistance: " << TARGET_DIST 
-			  << " index: "  << laserHit.index  << " from max: " << msg.ranges.size()
-			  << std::endl;
-	*/
-
-	if(laserHit.distance <= msg.range_max) 
-	{
-		touching_wall = true;
-
-		float alpha =  degrees2radians(90) - fabs(laserHit.angle);
-		//float alpha =  float(M_PI/2.0) - fabs(laserHit.angle);
-/*
-		std::cout << "target dst: " << (laserHit.distance - TARGET_DIST) << std::endl;
-		std::cout << "alpha: " << alpha << std::endl;
-		std::cout << "sin(alpha): " << sin(alpha) << std::endl;
-*/
-		geometry_msgs::Twist cmd;
-		cmd.linear.x = LINEAR_VEL;
-		cmd.angular.z = - TURNING_RATE * (sin(alpha) - (laserHit.distance - TARGET_DIST)) * LINEAR_VEL;
-/*
-		std::cout << "linear vel: " << cmd.linear.x << "\n";
-		std::cout << "angular vel: " << cmd.angular.z << "\n";
-		std::cout << "laser dist: " << laserHit.distance << "\n";
-		std::cout << "alpha: " << alpha << "\n";
-		std::cout << std::endl;
-		std::cout << "Touching the wall" << std::endl;
-*/
-		if(!rotateItSelf)
-			cmdVelPub_.publish(cmd);
-
-		std::cout <<"algo 0: " << alpha << " z = " << cmd.angular.z <<std::endl;
-    }	
-    else 
-	{
-    	touching_wall = false;
-		std::cout << "=> not touching the wall" << std::endl;
-    }
 }
 
 float FollowB::convertPolarToCartesianX(const LaserHit &hit)
@@ -199,13 +102,30 @@ float FollowB::convertPolarToCartesianY(const LaserHit &hit)
 	return hit.distance * sin ((hit.angle));
 }
 
+void FollowB::paralellWallFollowing(const sensor_msgs::LaserScan& msg)
+{
+	LaserHit laserHit = getMinDistanceLaserHit(msg);
+
+	if(laserHit.distance <= msg.range_max) 
+	{
+		float alpha =  degrees2radians(90) - fabs(laserHit.angle);
+		geometry_msgs::Twist cmd;
+		cmd.linear.x = LINEAR_VEL;
+		cmd.angular.z = - TURNING_RATE * (sin(alpha) - (laserHit.distance - TARGET_DIST)) * LINEAR_VEL;
+		cmdVelPub_.publish(cmd);
+    }	
+    else 
+	{
+		std::cout << "=> Laser don't touch anything." << std::endl;
+    }
+}
+
 void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg)
 {
 	LaserHit laserHitRay1 = {FLT_MAX, 0.0f};
 	LaserHit laserHitRay2 = {FLT_MAX, 0.0f};
 
 	int minIdx = 0;
-	
 	
     for(int i = 0; i < msg.ranges.size(); i++) 
 	{
@@ -215,20 +135,16 @@ void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg)
 			laserHitRay1.distance = msg.ranges[i];
 		}
     }
-
-	std::cout <<"Index: " << minIdx << " total: "  << msg.ranges.size() <<  std::endl;
-
-	// get the structure of min laser
-
+	
 	laserHitRay1.distance = msg.ranges[minIdx];
 	laserHitRay1.angle = msg.angle_min + (msg.angle_increment * float(minIdx));
 	laserHitRay1.index = minIdx;
 
-	int INC = 3;
+	int INC = (minIdx == msg.ranges.size()-1) ? INC = -1: INC = 1;
+
 	laserHitRay2.distance = msg.ranges[minIdx+INC];
 	laserHitRay2.angle = msg.angle_min + (msg.angle_increment * float(minIdx+INC));
 	laserHitRay2.index = minIdx+INC;
-
 	
 	float x0 = convertPolarToCartesianX(laserHitRay1);
 	float y0 = convertPolarToCartesianY(laserHitRay1);
@@ -236,33 +152,25 @@ void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg)
 	float x1 = convertPolarToCartesianX(laserHitRay2);
 	float y1 = convertPolarToCartesianY(laserHitRay2);
 
-	std::cout << "x0 = "<< x0 << " y0 = " << y0 << std::endl;
-	std::cout << "x1 = "<< x1 << " y1 = " << y1 << std::endl;
-
-	//@Todo
-	//convert degree to rad ?
-
-	float DWALL = 1.0;
-	float WALL_LEAD = 2.5;
-
 	float alpha = atan2 ((y1-DWALL), (x1 + WALL_LEAD - y0)) ;
-	//std::cout <<"algo 2: " << alpha << " (x1 -x0) "<< (x1-x0) <<std::endl;
 
 	geometry_msgs::Twist cmd;
 	cmd.linear.x = LINEAR_VEL;
 	cmd.angular.z = alpha;
-
 	cmdVelPub_.publish(cmd);
 
 }
 
-// @Read
-// http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/LaserScan.html
 void FollowB::laserCallback(const sensor_msgs::LaserScan& msg)
 {
-	// paralellWallFollowing(msg);
-
-	virtualTriangleWallFollowing(msg);
+	if(algorithm_ == std::string("pwall"))
+	{
+		paralellWallFollowing(msg);
+	}
+	else if(algorithm_ == std::string("vwall"))
+	{
+		virtualTriangleWallFollowing(msg);
+	}
 }
 
 // @Read
@@ -272,39 +180,3 @@ void FollowB::sonarCallback(const sensor_msgs::Range::ConstPtr& msg)
 	ROS_INFO("Sonar Seq: [%d]", msg->header.seq);
 	ROS_INFO("Sonar Range: [%f]", msg->range);
 }
-
-
-
-/*
-File: sensor_msgs/LaserScan.msg
-Raw Message Definition
-# Single scan from a planar laser range-finder
-#
-# If you have another ranging device with different behavior (e.g. a sonar
-# array), please find or create a different message, since applications
-# will make fairly laser-specific assumptions about this data
-
-Header header            # timestamp in the header is the acquisition time of 
-                         # the first ray in the scan.
-                         #
-                         # in frame frame_id, angles are measured around 
-                         # the positive Z axis (counterclockwise, if Z is up)
-                         # with zero angle being forward along the x axis
-                         
-float32 angle_min        # start angle of the scan [rad]
-float32 angle_max        # end angle of the scan [rad]
-float32 angle_increment  # angular distance between measurements [rad]
-
-float32 time_increment   # time between measurements [seconds] - if your scanner
-                         # is moving, this will be used in interpolating position
-                         # of 3d points
-float32 scan_time        # time between scans [seconds]
-
-float32 range_min        # minimum range value [m]
-float32 range_max        # maximum range value [m]
-
-float32[] ranges         # range data [m] (Note: values < range_min or > range_max should be discarded)
-float32[] intensities    # intensity data [device-specific units].  If your
-                         # device does not provide intensities, please leave
-                         # the array empty.
-*/
