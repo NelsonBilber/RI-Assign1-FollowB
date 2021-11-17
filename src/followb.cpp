@@ -5,11 +5,11 @@ FollowB::FollowB(int argc,char **argv)
 	if(argc != 4)
 	{
 		ROS_ERROR(
-		"Usage : followb <robot_frame_id> <sensor_frame_id> <algorithm>");
+		"Usage : followb <robot_frame_id> <sensor_type> <algorithm>");
 		exit(0);
 	}
 
-	setupReactiveAlgorithm(argv[3]);
+	setupReactiveAlgorithm(std::string(argv[2]), std::string(argv[3]));
 	setupSubscribers(std::string(argv[1]), std::string(argv[2]));
 	setupPublisher(std::string(argv[1]));
 }
@@ -18,10 +18,16 @@ FollowB::FollowB(int argc,char **argv)
 FollowB::~FollowB(void)
 {}
 
-void FollowB::setupReactiveAlgorithm(std::string algo)
+void FollowB::setupReactiveAlgorithm(std::string sensorType, std::string algo)
 {	
-	if(algo.compare(std::string("vwall")) != 0 &&  algo.compare(std::string("pwall")) != 0)
+	std::cout << sensorType <<" - " << algo << std::endl;
+	if( sensorType == "sonar" && algo == "vwall" )
 	{
+		std::cout << "Sonar doesn't support vwall algorithm." << std::endl;
+		exit(0);	
+	}
+	else if(algo !=" vwall"  &&  algo != "pwall")
+	{		
 		std::cout << algo << std::endl;
 		std::cout << "Algorithm not supported. Please, choose pwall or vwall as parameter." << std::endl;
 		exit(0);
@@ -33,27 +39,28 @@ void FollowB::setupReactiveAlgorithm(std::string algo)
 	}
 }
 
-void FollowB::setupSubscribers(std::string robotId, std::string sensorId)
+void FollowB::setupSubscribers(std::string robotId, std::string sensorType)
 {	
-	if (sensorId.substr(0, 5) == std::string("laser"))
+	if (sensorType == std::string("laser"))
 	{
-		std::string laserTopic_ = std::string("/")  +  robotId + std::string("/") + std::string(sensorId);
-		subscriberSensor_ = nodeHandler_.subscribe( laserTopic_.c_str(), 1, &FollowB::laserCallback,this);
-		std::cout << "Subscribe from robot: " << robotId << " data from: " << sensorId << std::endl;
+		std::string laserTopic_ = std::string("/")  +  robotId + std::string("/") + std::string(sensorType).append(std::string("_0"));
+		subscriberSensor_ = nodeHandler_.subscribe( laserTopic_.c_str(), 1, &FollowB::laserCallback,this);	
 	}
-	else if (sensorId.substr(0, 5) == std::string("sonar"))
+	else if (sensorType == std::string("sonar"))
 	{
-		//@Todo:: http://wiki.ros.org/evarobot_sonar/Tutorials/indigo/Writing%20a%20Simple%20Subscriber%20for%20Sonar%20Sensor
-		
-		std::string sonarTopic_ = std::string("/")  +  robotId + std::string("/") + std::string(sensorId);
-		subscriberSensor_ = nodeHandler_.subscribe(sonarTopic_.c_str(), 1, &FollowB::sonarCallback, this);
-		std::cout << "Subscribe from robot: " << robotId << " data from: " << sensorId << std::endl;
+		std::string sonarTopic_;
+
+		sonarTopic_ = std::string("/")  +  robotId + std::string("/") + std::string(sensorType).append(std::string("_") + std::to_string(0));
+		subscribeSonar0_ = nodeHandler_.subscribe(sonarTopic_.c_str(), 1, &FollowB::sonarCallback, this);
+
+		sonarTopic_ = std::string("/")  +  robotId + std::string("/") + std::string(sensorType).append(std::string("_")+ std::to_string(1));
+		subscribeSonar1_ = nodeHandler_.subscribe(sonarTopic_.c_str(), 1, &FollowB::sonarCallback, this);
 	}
 	else
 	{
-		std::cout << "Sensor not recognized: " << sensorId << std::endl;		
+		std::cout << "Sensor not recognized: " << sensorType << std::endl;	
+		exit(0)	;
 	}
-
 }
 
 void FollowB::setupPublisher(std::string robotId)
@@ -62,9 +69,9 @@ void FollowB::setupPublisher(std::string robotId)
 	cmdVelPub_ = nodeHandler_.advertise<geometry_msgs::Twist>(speedsTopic_.c_str(), 1);	
 }
 
-LaserHit FollowB::getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg)
+HitRay FollowB::getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg)
 {
-	LaserHit laserHit = {FLT_MAX, 0.0f};
+	HitRay laserHit = {FLT_MAX, 0.0f};
 
     for(int i = 0; i < msg.ranges.size(); i++) 
 	{
@@ -92,38 +99,37 @@ float FollowB::radians2degrees(float angle_in_radians){
 	return angle_in_radians * (180/M_PI);
 }
 
-float FollowB::convertPolarToCartesianX(const LaserHit &hit)
+float FollowB::convertPolarToCartesianX(const HitRay &hit)
 {
 	return hit.distance * cos ((hit.angle));
 }
     
-float FollowB::convertPolarToCartesianY(const LaserHit &hit)
+float FollowB::convertPolarToCartesianY(const HitRay &hit)
 {
 	return hit.distance * sin ((hit.angle));
 }
 
-void FollowB::paralellWallFollowing(const sensor_msgs::LaserScan& msg)
+void FollowB::paralellWallFollowing(const HitRay& hray, float targetDistance, float turningRate, float rangeMax)
 {
-	LaserHit laserHit = getMinDistanceLaserHit(msg);
-
-	if(laserHit.distance <= msg.range_max) 
+	geometry_msgs::Twist cmd;
+	if(hray.distance <= rangeMax) 
 	{
-		float alpha =  degrees2radians(90) - fabs(laserHit.angle);
-		geometry_msgs::Twist cmd;
+		float alpha =  degrees2radians(90) - fabs(hray.angle);
 		cmd.linear.x = LINEAR_VEL;
-		cmd.angular.z = - TURNING_RATE * (sin(alpha) - (laserHit.distance - TARGET_DIST)) * LINEAR_VEL;
+		cmd.angular.z = - turningRate * (sin(alpha) - (hray.distance - targetDistance)) * LINEAR_VEL;
 		cmdVelPub_.publish(cmd);
     }	
     else 
 	{
-		std::cout << "=> Laser don't touch anything." << std::endl;
+		cmd.linear.x = LINEAR_VEL;
+		cmdVelPub_.publish(cmd);
     }
 }
 
 void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg)
 {
-	LaserHit laserHitRay1 = {FLT_MAX, 0.0f};
-	LaserHit laserHitRay2 = {FLT_MAX, 0.0f};
+	HitRay laserHitRay1 = {FLT_MAX, 0.0f};
+	HitRay laserHitRay2 = {FLT_MAX, 0.0f};
 
 	int minIdx = 0;
 	
@@ -163,9 +169,12 @@ void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg)
 
 void FollowB::laserCallback(const sensor_msgs::LaserScan& msg)
 {
+	ROS_INFO("Laser Seq: [%d]", msg.header.seq);
+	ROS_INFO("Laser Scan time: [%f]", msg.scan_time);
+
 	if(algorithm_ == std::string("pwall"))
 	{
-		paralellWallFollowing(msg);
+		paralellWallFollowing(getMinDistanceLaserHit(msg),TARGET_DIST_LASER, TURNING_RATE_LASER, msg.range_max);
 	}
 	else if(algorithm_ == std::string("vwall"))
 	{
@@ -173,10 +182,14 @@ void FollowB::laserCallback(const sensor_msgs::LaserScan& msg)
 	}
 }
 
-// @Read
-// http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Range.html
 void FollowB::sonarCallback(const sensor_msgs::Range::ConstPtr& msg)
 {
 	ROS_INFO("Sonar Seq: [%d]", msg->header.seq);
 	ROS_INFO("Sonar Range: [%f]", msg->range);
+
+	if(msg->range != std::numeric_limits<sensor_msgs::Range::_range_type>::infinity())
+	{
+		HitRay hray { msg->range, msg->field_of_view/2, 0};
+		paralellWallFollowing(hray, TARGET_DIST_SONAR, TURNING_RATE_SONAR, msg->max_range);
+	}
 }

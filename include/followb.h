@@ -12,17 +12,27 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Range.h>
 
-const float TARGET_DIST = 0.3f; /* 0.24f for value inf. it takes time to rotate*/
-const float TURNING_RATE = 15.0f;
+
+/* Laser sensor constants */
+const float TARGET_DIST_LASER = 0.3f; /* 0.24f for value inf. it takes time to rotate*/
+const float TURNING_RATE_LASER = 15.0f;
+
+/* Sonar sensor constants */
+const float TARGET_DIST_SONAR = 0.1f; 
+const float TURNING_RATE_SONAR = 5.0f;
+
+/* Velocities */
 const float LINEAR_VEL = 0.3f;
 const float ANGULAR_VEL = 0.6f;
 
-const float EPSILON = 0.00001f;
-
+/* Distancies */
 const float DWALL = 1.1f;
 const float WALL_LEAD = 2.6f;
 
-struct LaserHit{
+
+const float EPSILON = 0.00001f;
+
+struct HitRay{
   float distance;
   float angle;
   int index;
@@ -33,25 +43,25 @@ class FollowB
 {
   private:    
 
-     void virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg); 
+    void virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg); 
 
-    void paralellWallFollowing(const sensor_msgs::LaserScan& msg);
+    void paralellWallFollowing(const HitRay& hray, float targetDistance, float turningRate, float rangeMax);
 
     bool compareFloat(double a, double b);
 
-    float convertPolarToCartesianX(const LaserHit &hit);
+    float convertPolarToCartesianX(const HitRay &hit);
     
-    float convertPolarToCartesianY(const LaserHit &hit);
+    float convertPolarToCartesianY(const HitRay &hit);
     
     float degrees2radians(float angle_in_degrees);
 
     float radians2degrees(float angle_in_radians);
 
-    LaserHit getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg);
+    HitRay getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg);
 
-    void setupReactiveAlgorithm(std::string algo);
+    void setupReactiveAlgorithm(std::string sensorType, std::string algo);
 
-    void setupSubscribers(std::string robotId, std::string sensorId);
+    void setupSubscribers(std::string robotId, std::string sensorType);
 
     void setupPublisher(std::string robotId);
 
@@ -59,7 +69,9 @@ class FollowB
 
     ros::Subscriber subscriberSensor_; 
 
-    ros::Subscriber subscriberOdometry_;     
+    ros::Subscriber subscribeSonar0_;  
+
+    ros::Subscriber subscribeSonar1_;     
 
     ros::NodeHandle nodeHandler_;      
 
