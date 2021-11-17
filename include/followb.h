@@ -12,13 +12,12 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Range.h>
 
-
 /* Laser sensor constants */
 const float TARGET_DIST_LASER = 0.3f; /* 0.24f for value inf. it takes time to rotate*/
 const float TURNING_RATE_LASER = 15.0f;
 
 /* Sonar sensor constants */
-const float TARGET_DIST_SONAR = 0.1f; 
+const float TARGET_DIST_SONAR = 0.1f;
 const float TURNING_RATE_SONAR = 5.0f;
 
 /* Velocities */
@@ -29,70 +28,64 @@ const float ANGULAR_VEL = 0.6f;
 const float DWALL = 1.1f;
 const float WALL_LEAD = 2.6f;
 
-
 const float EPSILON = 0.00001f;
 
-struct HitRay{
+struct HitRay
+{
   float distance;
   float angle;
   int index;
 };
 
-
 class FollowB
 {
-  private:    
+private:
+  void virtualTriangleWallFollowing(const sensor_msgs::LaserScan &msg);
 
-    void virtualTriangleWallFollowing(const sensor_msgs::LaserScan& msg); 
+  void paralellWallFollowing(const HitRay &hray, float targetDistance, float turningRate, float rangeMax);
 
-    void paralellWallFollowing(const HitRay& hray, float targetDistance, float turningRate, float rangeMax);
+  bool compareFloat(double a, double b);
 
-    bool compareFloat(double a, double b);
+  float convertPolarToCartesianX(const HitRay &hit);
 
-    float convertPolarToCartesianX(const HitRay &hit);
-    
-    float convertPolarToCartesianY(const HitRay &hit);
-    
-    float degrees2radians(float angle_in_degrees);
+  float convertPolarToCartesianY(const HitRay &hit);
 
-    float radians2degrees(float angle_in_radians);
+  float degrees2radians(float angle_in_degrees);
 
-    HitRay getMinDistanceLaserHit(const sensor_msgs::LaserScan& msg);
+  float radians2degrees(float angle_in_radians);
 
-    void setupReactiveAlgorithm(std::string sensorType, std::string algo);
+  HitRay getMinDistanceLaserHit(const sensor_msgs::LaserScan &msg);
 
-    void setupSubscribers(std::string robotId, std::string sensorType);
+  void setupReactiveAlgorithm(std::string sensorType, std::string algo);
 
-    void setupPublisher(std::string robotId);
+  void setupSubscribers(std::string robotId, std::string sensorType);
 
-    sensor_msgs::LaserScan scan_;   
+  void setupPublisher(std::string robotId);
 
-    ros::Subscriber subscriberSensor_; 
+  sensor_msgs::LaserScan scan_;
 
-    ros::Subscriber subscribeSonar0_;  
+  ros::Subscriber subscriberSensor_;
 
-    ros::Subscriber subscribeSonar1_;     
+  ros::Subscriber subscribeSonar0_;
 
-    ros::NodeHandle nodeHandler_;      
+  ros::Subscriber subscribeSonar1_;
 
-    ros::Publisher cmdVelPub_;
+  ros::NodeHandle nodeHandler_;
 
-    std::string algorithm_;
+  ros::Publisher cmdVelPub_;
 
-    
-  public:
-    
-    FollowB(int argc,char **argv);
-        
-    ~FollowB(void);   
+  std::string algorithm_;
 
-    void laserCallback(const sensor_msgs::LaserScan& msg);
+public:
+  FollowB(int argc, char **argv);
 
-    void sonarCallback(const sensor_msgs::Range::ConstPtr& msg);
+  ~FollowB(void);
 
-    void odometryCallback(const nav_msgs::Odometry::ConstPtr& msg);
-    
+  void laserCallback(const sensor_msgs::LaserScan &msg);
+
+  void sonarCallback(const sensor_msgs::Range::ConstPtr &msg);
+
+  void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
 };
-
 
 #endif
