@@ -12,8 +12,13 @@ Just use the **setup.sh** script and if necessary install **Qt4 dependencies**.
 
 To run this script first create a folder or give permissions to create directories and files.
 
-### Compile commands
+### Compile commands (manual)
 
+Open a terminal and go to the folder were the source code is and run the commands:
+
+catkin_make
+
+source devel/setup.bash
 
 
 ## Qt4 Dependencies
@@ -32,6 +37,16 @@ sudo apt-get install libqt4-dev
 # Run 
 
 The simlation has different maps and robots with diferent sensors. Each simulation hypothesis has its own map and algortihm:
+
+To start a map: 
+
+roslaunch stdr_launchers <map to laucn>  
+
+
+To start a robot:
+
+rosrun followb followb <robot> <sensor> <algorithm>
+
 
 ## parallel algorithm
 
