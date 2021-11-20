@@ -24,7 +24,7 @@ const float TURNING_RATE_SONAR = 15.0f;
 const float LINEAR_VEL = 0.3f;
 const float ANGULAR_VEL = 0.6f;
 
-/* Distancies */
+/* Distances */
 const float DWALL = 1.1f;
 const float WALL_LEAD = 2.6f;
 

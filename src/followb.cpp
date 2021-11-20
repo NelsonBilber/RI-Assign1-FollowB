@@ -161,8 +161,6 @@ void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan &msg)
 
 	float alpha = atan2((y1 - DWALL), (x1 + WALL_LEAD - y0));
 
-	std::cout << alpha << " DWALL " << DWALL << " WALL_LEAD " << WALL_LEAD << std::endl;
-
 	geometry_msgs::Twist cmd;
 	cmd.linear.x = LINEAR_VEL;
 	cmd.angular.z = alpha;
