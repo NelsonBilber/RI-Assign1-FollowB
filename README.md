@@ -7,13 +7,30 @@ This project presents a simple reactive robot that will contour a B-Shape Object
 
 ## Compile
 
-### Setup
+### Setup the environment (first run)
 
 To compile and run this project it is necessary to install de [STDL simulator](http://wiki.ros.org/stdr_simulator). 
 
 Just use the **environment_setup.sh** script and if necessary install **Qt4 dependencies**. 
 
 To run this script first create a folder or give permissions to create directories and files.
+
+```
+
+git clone git@github.com:NelsonBilber/RI-Assign1-FollowB.git
+
+chmod -R 755 *
+
+cd RI-Assign1-FollowB
+
+./environment_setup.sh 
+
+cd clean_workspace
+
+source devel/setup.bash
+
+```
+
 
 ### Compile commands (manual)
 
@@ -38,6 +55,8 @@ sudo apt-get install libqt4-dev
 
 
 [Information source](https://www-icode9-com.translate.goog/content-3-978636.html?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=pt-PT&_x_tr_pto=nui#google_vignette)
+
+
 
 # Run 
 
