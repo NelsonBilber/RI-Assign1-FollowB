@@ -26,7 +26,7 @@ void FollowB::setupReactiveAlgorithm(std::string sensorType, std::string algo)
 		std::cout << "Sonar doesn't support vwall algorithm." << std::endl;
 		exit(0);
 	}
-	else if (algo != " vwall" && algo != "pwall")
+	else if (algo != "vwall" && algo != "pwall")
 	{
 		std::cout << algo << std::endl;
 		std::cout << "Algorithm not supported. Please, choose pwall or vwall as parameter." << std::endl;
@@ -161,6 +161,8 @@ void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan &msg)
 
 	float alpha = atan2((y1 - DWALL), (x1 + WALL_LEAD - y0));
 
+	std::cout << alpha << " DWALL " << DWALL << " WALL_LEAD " << WALL_LEAD << std::endl;
+
 	geometry_msgs::Twist cmd;
 	cmd.linear.x = LINEAR_VEL;
 	cmd.angular.z = alpha;
@@ -184,8 +186,8 @@ void FollowB::laserCallback(const sensor_msgs::LaserScan &msg)
 
 void FollowB::sonarCallback(const sensor_msgs::Range::ConstPtr &msg)
 {
-	ROS_INFO("Sonar Seq: [%d]", msg->header.seq);
-	ROS_INFO("Sonar Range: [%f]", msg->range);
+	//ROS_INFO("Sonar Seq: [%d]", msg->header.seq);
+	//ROS_INFO("Sonar Range: [%f]", msg->range);
 
 	if (msg->range != std::numeric_limits<sensor_msgs::Range::_range_type>::infinity())
 	{

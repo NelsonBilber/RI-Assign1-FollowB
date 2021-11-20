@@ -17,8 +17,8 @@ const float TARGET_DIST_LASER = 0.3f; /* 0.24f for value inf. it takes time to r
 const float TURNING_RATE_LASER = 15.0f;
 
 /* Sonar sensor constants */
-const float TARGET_DIST_SONAR = 0.1f;
-const float TURNING_RATE_SONAR = 5.0f;
+const float TARGET_DIST_SONAR = 0.5f;
+const float TURNING_RATE_SONAR = 15.0f;
 
 /* Velocities */
 const float LINEAR_VEL = 0.3f;
