@@ -1,13 +1,23 @@
-# @TODO
+#!/bin/bash
 
-# create a script to install the strd_simulator
-# problems with Qt4 and Noetic with ubuntu 20.04
+mkdir clean_workspace
 
-# create a clean folder from zero, with a clean environment
+cd clean workspace
 
-# copy the auxiliary files to new clean folder
+mkdir src
 
-# run ros commands to launch a server client environment
+cd src
 
-roslaunch stdr_launchers b_map.launch
-rosrun  followb followb robot0 laser_0
+mkdir followb_robot
+
+cp -Rv ../../RI-Assign1-FollowB/* followb_robot
+
+git clone https://github.com/stdr-simulator-ros-pkg/stdr_simulator.git
+
+cd ..
+
+rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+
+cp -Rv src/followb_robot/stdr_aux_files/* src/stdr_simulator
+
+catkin_make

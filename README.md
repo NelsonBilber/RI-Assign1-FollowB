@@ -11,7 +11,7 @@ This project presents a simple reactive robot that will contour a B-Shape Object
 
 To compile and run this project it is necessary to install de [STDL simulator](http://wiki.ros.org/stdr_simulator). 
 
-Just use the **setup.sh** script and if necessary install **Qt4 dependencies**. 
+Just use the **environment_setup.sh** script and if necessary install **Qt4 dependencies**. 
 
 To run this script first create a folder or give permissions to create directories and files.
 
