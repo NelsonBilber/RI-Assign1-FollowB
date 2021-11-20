@@ -40,12 +40,12 @@ The simlation has different maps and robots with diferent sensors. Each simulati
 
 To start a map: 
 
-roslaunch stdr_launchers <map to laucn>  
+roslaunch stdr_launchers "map to lauch"
 
 
 To start a robot:
 
-rosrun followb followb <robot> <sensor> <algorithm>
+rosrun followb followb "robot" "sensor" "algorithm"
 
 
 ## parallel algorithm
