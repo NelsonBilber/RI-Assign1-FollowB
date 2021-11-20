@@ -10,7 +10,7 @@ cd src
 
 mkdir followb_robot
 
-cp -Rv ../../RI-Assign1-FollowB/* followb_robot
+cp -Rv ../../source_code/* followb_robot
 
 git clone https://github.com/stdr-simulator-ros-pkg/stdr_simulator.git
 
