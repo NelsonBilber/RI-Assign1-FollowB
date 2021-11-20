@@ -2,7 +2,7 @@
 
 mkdir clean_workspace
 
-cd clean workspace
+cd clean_workspace
 
 mkdir src
 
