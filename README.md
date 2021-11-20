@@ -2,6 +2,9 @@
 
 This project presents a simple reactive robot that will contour a B-Shape Object
 
+![cover](./imgs/cover.png)
+
+
 ## Compile
 
 ### Setup
@@ -48,7 +51,7 @@ To start a robot:
 rosrun followb followb "robot" "sensor" "algorithm"
 
 
-## parallel algorithm
+## Parallel Algorithm Wall Following
 
 Start a robot with laser sensor in map inside of the b-shape obstacle
 
@@ -90,7 +93,7 @@ rosrun followb followb robot0 sonar pwall
 
 
 
-## virtual triangle algorithm
+## Virtual Triangle Wall Following algorithm
 
 Start a robot with laser sensor in map inside of the b-shape obstacle
 
