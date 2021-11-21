@@ -169,8 +169,8 @@ void FollowB::virtualTriangleWallFollowing(const sensor_msgs::LaserScan &msg)
 
 void FollowB::laserCallback(const sensor_msgs::LaserScan &msg)
 {
-	ROS_INFO("Laser Seq: [%d]", msg.header.seq);
-	ROS_INFO("Laser Scan time: [%f]", msg.scan_time);
+	//ROS_INFO("Laser Seq: [%d]", msg.header.seq);
+	//ROS_INFO("Laser Scan time: [%f]", msg.scan_time);
 
 	if (algorithm_ == std::string("pwall"))
 	{

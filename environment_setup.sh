@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# If you have problem installing the STDR simulator please read the 
+# README.md to install the Qt4 dependencies
+
 mkdir clean_workspace
 
 cd clean_workspace
