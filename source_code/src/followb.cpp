@@ -155,7 +155,7 @@ void FollowB::laserCallback(const sensor_msgs::LaserScan &msg)
 	}
 }
 
-//Receive the messages from the sonar sensors
+// Receive the messages from the sonar sensors
 void FollowB::sonarCallback(const sensor_msgs::Range::ConstPtr &msg)
 {
 	if (msg->range != std::numeric_limits<sensor_msgs::Range::_range_type>::infinity())

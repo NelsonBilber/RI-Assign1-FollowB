@@ -104,7 +104,7 @@ public:
   // Receive the messages from the laser sensors 
   void laserCallback(const sensor_msgs::LaserScan &msg);
 
-  //Receive the messages from the sonar sensors
+  // Receive the messages from the sonar sensors
   void sonarCallback(const sensor_msgs::Range::ConstPtr &msg);
 
 };
