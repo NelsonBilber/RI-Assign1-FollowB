@@ -40,26 +40,46 @@ struct HitRay
 class FollowB
 {
 private:
-  void virtualTriangleWallFollowing(const sensor_msgs::LaserScan &msg);
 
-  void paralellWallFollowing(const HitRay &hray, float targetDistance, float turningRate, float rangeMax);
+  // Calculate the robot's heading using the virtual right triangle wall follower technique  
+  void virtualRightTriangleWallFollower(const sensor_msgs::LaserScan &msg);
 
+  // Calculate the robot's heading using the 'parallel' wall follower technique
+  void parallelWallFollowing(const HitRay &hray, float targetDistance, float turningRate, float rangeMax);
+
+  // Set the hading of the reactive robots
+  void setRobotHeading(const float& angle);
+
+  // Compare two floats 
   bool compareFloat(double a, double b);
 
+  // Get x coordinate from an polar angle 
   float convertPolarToCartesianX(const HitRay &hit);
 
+  // Get y coordinate from an polar angle 
   float convertPolarToCartesianY(const HitRay &hit);
 
+  // Convert degress to radians 
   float degrees2radians(float angle_in_degrees);
 
+  // Convert radians to degree
   float radians2degrees(float angle_in_radians);
 
+  // Get the ray with the minimal distance to the obstacle and the angle
   HitRay getMinDistanceLaserHit(const sensor_msgs::LaserScan &msg);
 
+  // Check if the sensor support the algorithm
   void setupReactiveAlgorithm(std::string sensorType, std::string algo);
 
+  /*
+  Subscribe the data from the sensors and set a callback to reveive their data:
+  laser_0 (is the laser)
+  sonar_0 (sonar 1)
+  sonar_1 (sonar 2)
+  */
   void setupSubscribers(std::string robotId, std::string sensorType);
 
+  // Setup the the Publisher
   void setupPublisher(std::string robotId);
 
   sensor_msgs::LaserScan scan_;
@@ -81,11 +101,12 @@ public:
 
   ~FollowB(void);
 
+  // Receive the messages from the laser sensors 
   void laserCallback(const sensor_msgs::LaserScan &msg);
 
+  //Receive the messages from the sonar sensors
   void sonarCallback(const sensor_msgs::Range::ConstPtr &msg);
 
-  void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
 };
 
 #endif
