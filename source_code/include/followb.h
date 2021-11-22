@@ -47,7 +47,7 @@ private:
   // Calculate the robot's heading using the 'parallel' wall follower technique
   void parallelWallFollowing(const HitRay &hray, float targetDistance, float turningRate, float rangeMax);
 
-  // Set the hading of the reactive robots
+  // Set the heading of the reactive robots
   void setRobotHeading(const float& angle);
 
   // Compare two floats 

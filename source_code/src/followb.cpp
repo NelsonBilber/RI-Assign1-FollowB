@@ -133,6 +133,15 @@ void FollowB::virtualRightTriangleWallFollower(const sensor_msgs::LaserScan &msg
 	setRobotHeading(alpha);
 }
 
+// Set the heading of the reactive robots
+void FollowB::setRobotHeading(const float& angle){
+
+	geometry_msgs::Twist cmd;
+	cmd.linear.x = LINEAR_VEL;
+	cmd.angular.z = angle;
+	cmdVelPub_.publish(cmd);
+}
+
 // Receive the messages from the laser sensors 
 void FollowB::laserCallback(const sensor_msgs::LaserScan &msg)
 {
@@ -185,13 +194,4 @@ float FollowB::convertPolarToCartesianX(const HitRay &hit)
 float FollowB::convertPolarToCartesianY(const HitRay &hit)
 {
 	return hit.distance * sin((hit.angle));
-}
-
-// Set the hading of the reactive robots
-void FollowB::setRobotHeading(const float& angle){
-
-	geometry_msgs::Twist cmd;
-	cmd.linear.x = LINEAR_VEL;
-	cmd.angular.z = angle;
-	cmdVelPub_.publish(cmd);
 }
