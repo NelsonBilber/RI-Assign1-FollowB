@@ -53,10 +53,10 @@ private:
   // Compare two floats 
   bool compareFloat(double a, double b);
 
-  // Get x coordinate from an polar angle 
+  // Get x cartesian coordinate from a polar coordinate 
   float convertPolarToCartesianX(const HitRay &hit);
 
-  // Get y coordinate from an polar angle 
+  // Get y coordinate coordinate from a polar coordinate
   float convertPolarToCartesianY(const HitRay &hit);
 
   // Convert degress to radians 

@@ -184,13 +184,13 @@ float FollowB::radians2degrees(float angle_in_radians)
 	return angle_in_radians * (180 / M_PI);
 }
 
-// Get x coordinate from an polar angle 
+// Get x cartesian coordinate from a polar coordinate  
 float FollowB::convertPolarToCartesianX(const HitRay &hit)
 {
 	return hit.distance * cos((hit.angle));
 }
 
-// Get y coordinate from an polar angle 
+// Get y coordinate coordinate from a polar coordinate
 float FollowB::convertPolarToCartesianY(const HitRay &hit)
 {
 	return hit.distance * sin((hit.angle));
