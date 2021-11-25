@@ -27,6 +27,38 @@ sudo apt-get install libqt4-dev
 [Information source](https://www-icode9-com.translate.goog/content-3-978636.html?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=pt-PT&_x_tr_pto=nui#google_vignette)
 
 
+# Directory structure
+
+The *source_code* container the ROS package code and the STRD auxiliar resources (robots, maps, launchers).
+
+The installation process is "automated" when running the **./environment_setup.sh** script, as explained in the next section. 
+But if you prefer you can install the STDR simulator and copy the files on the **source/strd_aux_files** by hand to the STRL installation folder. 
+The final structure should be :
+
+```
+
+Code
+|
+|_src
+    |
+    |_ **followb_robot**
+    |
+    |_ **stdr_simulator**
+         |
+         |_ stdr_launchers
+         |    |
+         |    |_launch
+         |
+         |_ strd_resources
+             |
+             |_ maps
+             |
+             |_ resources
+                 |
+                 |_ robots
+
+```
+
 
 ### Setup the environment (first run)
 
